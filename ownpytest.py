@@ -1,31 +1,34 @@
 import os
 import sys
-import importlib
-from inspect import getmembers, isfunction
 
-import traceback
 
 fixtures_mapping = {}
 
 
 def get_traceback(ex):
-    tb = ex.__traceback__
-    trace = []
-    while tb is not None:
-        if tb.tb_next is None:
-            break
-        tb = tb.tb_next
+    buf = io.StringIO()
+    if hasattr(sys, "print_exception"):
+        sys.print_exception(ex, buf)
+    else:
+        import traceback
+        traceback.print_exception(None, ex, None, file=buf)
+    return buf.getvalue()
 
-        trace.append(
-            {
-                "filename": tb.tb_frame.f_code.co_filename,
-                "name": tb.tb_frame.f_code.co_name,
-                "lineno": tb.tb_lineno,
-                "traceback": traceback.format_tb(tb),
-                "message": ex.args,
-            }
-        )
-    return trace
+
+def import_module(mod_path):
+    mods = mod_path.split(".")
+    mod = __import__(mod_path)
+    while len(mods) > 1:
+        mod = getattr(mod, mods.pop(1))
+    return mod
+
+
+def getmembers(object, predicate=None):
+    names = dir(object)
+    members = [(n, getattr(object, n)) for n in names]
+    if predicate:
+        members = [(n, o) for n, o in members if predicate(o)]
+    return members
 
 
 def get_test_files():
@@ -39,8 +42,8 @@ def get_test_files():
 
 
 def get_test_functions(file_path):
-    module = importlib.import_module(file_path)
-    for members in getmembers(module, isfunction):
+    module = import_module(file_path)
+    for members in sorted(getmembers(module, callable)):
         if members[0].startswith("test_"):
             yield members
 

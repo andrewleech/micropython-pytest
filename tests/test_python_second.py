@@ -1,8 +1,3 @@
-try:
-    import pytest as owntest
-except:
-    import owntest as owntest
-
 from example.example import add, subtract, multiply, divide
 
 

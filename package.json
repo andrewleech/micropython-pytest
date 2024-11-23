@@ -1,0 +1,4 @@
+{
+    "version": "1.0.0",
+    "urls": [["pytest.py", "github:alelec/pytest/pytest.py"]]
+}
